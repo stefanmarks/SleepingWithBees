@@ -46,7 +46,7 @@ void setup()
   strokeWeight(1);
 
   // load sound
-  sample = new SoundFile(this, "Hive1.wav");
+  sample = new SoundFile(this, "Hive1.mp3");
   sample.play();
   // attach FFT analyser
   fft = new FFT(this);
