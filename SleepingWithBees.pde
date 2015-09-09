@@ -11,7 +11,8 @@
 
 import java.util.*;
 import java.text.*;
-import processing.sound.*;
+import ddf.minim.analysis.*;
+import ddf.minim.*;
 
 
 final float SIN60 = sin(radians(60));
@@ -29,12 +30,11 @@ List<Agent> agents;
 boolean     runAgents;
 
 // sound related variables
-SoundFile sample;
-FFT       fft;
-int       bands=128;
-float[]   spectrum;
-boolean   drawSpectrum = false;
-float     wingNoise;
+Minim       minim;
+AudioPlayer sound;
+FFT         fft;
+boolean     drawSpectrum = false;
+float       wingNoise;
 
 
 void setup()
@@ -46,12 +46,12 @@ void setup()
   strokeWeight(1);
 
   // load sound
-  sample = new SoundFile(this, "Hive1.mp3");
-  sample.play();
+  minim = new Minim(this);
+  sound = minim.loadFile("Hive1.mp3");
+  sound.play();
+  
   // attach FFT analyser
-  fft = new FFT(this);
-  spectrum = new float[bands];
-  fft.input(sample, bands);
+  fft = new FFT(sound.bufferSize(), sound.sampleRate());
   
   // start
   restart(); 
@@ -62,7 +62,7 @@ void setup()
 void draw()
 {
   // analyse the sound
-  fft.analyze(spectrum);
+  fft.forward(sound.mix);
   
 
   // are the agents "moving"?
@@ -92,17 +92,17 @@ void draw()
   {
     // draw spectrum
     noStroke();
-    final int barWidth = width / bands; 
-    for(int i = 0; i < bands; i++)
+    final int barWidth = width / fft.specSize(); 
+    for(int i = 0; i < fft.specSize() ; i++)
     {
-      if ( i == mouseX / barWidth ) { fill(255, 0, 0); println(i); }
+      if ( i == mouseX / barWidth ) { fill(255, 0, 0); println(fft.indexToFreq(i) + "Hz"); }
       else                          { fill(255); }
-      float intensity = spectrum[i] * height * 5;
+      float intensity = fft.getBand(i) * height / 5;
       rect(i * barWidth, height - intensity, barWidth, intensity);
     }
   }
     
-  wingNoise = spectrum[2]; // 200 Hz sound
+  wingNoise = fft.getBand(fft.freqToIndex(200)); // 200 Hz sound
     
   // draw frame
   translate(map(mouseX, 0,  width, width  * 1 / 4, width  * 3 / 4), 
@@ -226,6 +226,13 @@ void keyPressed()
       break;    
     }
     
+    case 'f' : 
+    {
+      // show/hide spectrum
+      drawSpectrum = !drawSpectrum;            
+      break;    
+    }
+
     case 's' : 
     {
       // save screenshot
