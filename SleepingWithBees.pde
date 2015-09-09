@@ -34,7 +34,8 @@ Minim       minim;
 AudioPlayer sound;
 FFT         fft;
 boolean     drawSpectrum = false;
-float       wingNoise;
+float       wingNoise, wingNoiseMax;
+float       hiveNoise, hiveNoiseMax;
 
 
 void setup()
@@ -55,6 +56,9 @@ void setup()
   
   // start
   restart(); 
+  
+  wingNoiseMax = 0.01;
+  hiveNoiseMax = 0.01;
 }
 
 
@@ -64,9 +68,21 @@ void draw()
   // analyse the sound
   fft.forward(sound.mix);
   
+  // wing noise = average of 150-700 Hz bands
+  float newWingNoise = fft.calcAvg(150, 700);           // (center bee-wing frequency ~200Hz) 
+  wingNoiseMax       = max(wingNoiseMax, newWingNoise); // running maximum
+  newWingNoise      /= wingNoiseMax;                    // normalise [0...1]
+  wingNoise = lerp(wingNoise, newWingNoise, 0.1);       // avoid sharp value changes
+  
+  // hive noise = average of 5kHz-12kHz bands
+  float newHiveNoise = fft.calcAvg(5000, 12000);
+  hiveNoiseMax       = max(hiveNoiseMax, newHiveNoise); // running maximum
+  newHiveNoise      /= hiveNoiseMax;                    // normalise [0...1]
+  hiveNoise = lerp(hiveNoise, newHiveNoise, 0.1);       // avoid sharp value changes 
+    
 
   // are the agents "moving"?
-  if ( runAgents && (frameCount % 3 == 0) )
+  if ( runAgents && (frameCount % 5 == 0) )
   {
     canMove  = true;
     storePos = false;
@@ -100,9 +116,10 @@ void draw()
       float intensity = fft.getBand(i) * height / 5;
       rect(i * barWidth, height - intensity, barWidth, intensity);
     }
-  }
     
-  wingNoise = fft.getBand(fft.freqToIndex(200)); // 200 Hz sound
+    fill(0, 255,   0); rect(0,  0, width * wingNoise, 10);
+    fill(0,   0, 255); rect(0, 10, width * hiveNoise, 10); 
+  }
     
   // draw frame
   translate(map(mouseX, 0,  width, width  * 1 / 4, width  * 3 / 4), 

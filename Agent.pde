@@ -64,7 +64,7 @@ public class SyncDancer implements Agent
       if ( canMove )
       {
         // change directiopn based on wing noise change
-        commonAngle += 10 * (wingNoise - prevNoise);
+        commonAngle += 400 * (wingNoise - prevNoise);
         prevNoise = wingNoise;
         
         //commonAngle += (int) random(-20, 20);
