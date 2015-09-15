@@ -49,8 +49,7 @@ void setup()
   // load sound
   minim = new Minim(this);
   sound = minim.loadFile("Hive1.mp3");
-  sound.play();    // play once
-  // sound.loop(); // for continuous play
+  sound.play();
   
   // attach FFT analyser
   fft = new FFT(sound.bufferSize(), sound.sampleRate());
