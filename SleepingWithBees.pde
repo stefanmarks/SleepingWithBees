@@ -9,17 +9,25 @@
  * http://physicsworld.com/cws/article/news/2014/sep/10/fractal-like-honeycombs-take-the-strain
  */
 
+// some configuration variables
+final float   CELL_ROUGHNESS = 0; 
+
+final boolean DEMO_MODE         = true;
+final int     DEMO_RESET_TIME   = 30; // seconds
+final int     FRAMES_PER_SECOND = 60;
+
+
+// imports
 import java.util.*;
 import java.text.*;
 import ddf.minim.analysis.*;
 import ddf.minim.*;
 
-
+// Maths constants
 final float SIN60 = sin(radians(60));
 final float COS60 = cos(radians(60));
 
-final float CELL_ROUGHNESS = 4; 
-
+// global variables
 PImage pattern;
 Frame  frame;
 
@@ -38,19 +46,30 @@ float       wingNoise, wingNoiseMax;
 float       hiveNoise, hiveNoiseMax;
 
 
+void settings()
+{
+  if ( DEMO_MODE ) 
+  {
+    fullScreen(P3D);
+  }
+  else 
+  {
+    size(1024, 800, P3D);
+  }
+}
+
+
 void setup()
 {
-  size(1024, 800, P3D);
-  //fullScreen(P3D);
-  
   smooth();
   strokeWeight(1);
+  frameRate(FRAMES_PER_SECOND);
 
   // load sound
   minim = new Minim(this);
   sound = minim.loadFile("Hive1.mp3");
-  sound.play();    // play once
-  // sound.loop(); // for continuous play
+  //sound.play();    // play once
+  sound.loop(); // for continuous play
   
   // attach FFT analyser
   fft = new FFT(sound.bufferSize(), sound.sampleRate());
@@ -60,6 +79,13 @@ void setup()
   
   wingNoiseMax = 0.01;
   hiveNoiseMax = 0.01;
+
+  runAgents = DEMO_MODE;
+  if ( DEMO_MODE )
+  {
+    noCursor();
+    posZ = 600;
+  }
 }
 
 
@@ -101,6 +127,15 @@ void draw()
       a.act();
     }
   }
+  
+  if ( DEMO_MODE )
+  {
+    // reset hive after certain time
+    if ( frameCount % (FRAMES_PER_SECOND * DEMO_RESET_TIME) == 0 )
+    {
+      restart();
+    }
+  }
 
   // clear screen
   background(0);
@@ -122,15 +157,26 @@ void draw()
     fill(0,   0, 255); rect(0, 10, width * hiveNoise, 10); 
   }
     
+  if ( DEMO_MODE )
+  {
+    //automatic camera rotation
+    translate(width / 2, height * 10 / 21, posZ);
+    rotateX(radians(45));
+    rotateZ(radians((frameCount % 1000) * 360 / 1000));
+  }
+  else
+  {
+    // mouse position determines rotation
+    translate(map(mouseX, 0,  width, width  * 1 / 4, width  * 3 / 4), 
+              map(mouseY, 0, height, height * 1 / 4, height * 3 / 4),
+              posZ);
+    rotateX(map(mouseY, 0, height, 2, -2));
+    rotateY(map(mouseX, 0, width, -2, 2));
+  }
+  
   // draw frame
-  translate(map(mouseX, 0,  width, width  * 1 / 4, width  * 3 / 4), 
-            map(mouseY, 0, height, height * 1 / 4, height * 3 / 4),
-            posZ);
-  rotateX(map(mouseY, 0, height, 2, -2));
-  rotateY(map(mouseX, 0, width, -2, 2));
   translate(-frame.width/2, -frame.height/2);
   frame.render();
-  
 }
 
 
