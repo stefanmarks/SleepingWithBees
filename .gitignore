@@ -52,3 +52,9 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+# Project specific
+# ==========================
+*.stl
+screenshots/*.*
+./*.png
