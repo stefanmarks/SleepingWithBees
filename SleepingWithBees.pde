@@ -13,7 +13,7 @@
 final float   CELL_ROUGHNESS = 0; 
 
 final boolean DEMO_MODE         = true;
-final int     DEMO_RESET_TIME   = 30; // seconds
+final int     DEMO_RESET_TIME   = 60; // seconds
 final int     FRAMES_PER_SECOND = 60;
 
 
@@ -162,7 +162,7 @@ void draw()
     //automatic camera rotation
     translate(width / 2, height * 10 / 21, posZ);
     rotateX(radians(45));
-    rotateZ(radians((frameCount % 1000) * 360 / 1000));
+    rotateZ(radians((frameCount % 1000) * 360.0 / 1000.0));
   }
   else
   {
