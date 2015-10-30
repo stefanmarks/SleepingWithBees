@@ -111,7 +111,7 @@ public class SyncDancer implements Agent
     }
 
     Cell cell = position.createCell();
-    cell.activity += storePos ? 0.5 : 0;
+    cell.addActivity(storePos ? 0.5 : 0);
   }
   
   boolean  master;

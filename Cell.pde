@@ -6,7 +6,6 @@ class Cell
   FramePos pos;
   PVector  worldPos;
   float    radius, depth;
-  float    activity;
   
   
   Cell(FramePos pos, float zOffset, float radius, float depth)
@@ -17,11 +16,30 @@ class Cell
     this.radius     = radius;
     this.depth      = depth;
     
-    activity  = 0;
-    vtx       = null; 
+    vtx = null; 
     updateGeometry();
+
+    setActivity(0);
   }
 
+
+  float getActivity()
+  {
+    return activity;
+  }
+  
+  
+  void setActivity(float activity)
+  {
+    this.activity = constrain(activity, 0, 1);
+    colFill   = cellColourMap.get((int) (activity * 255), 0);
+    colStroke = cellColourMap.get((int) (activity * 255), 1);
+  }
+
+  void addActivity(float add)
+  {
+    setActivity(activity + add);
+  }
 
   void updateGeometry()
   {
@@ -62,8 +80,8 @@ class Cell
     pushMatrix();
       translate(worldPos.x, worldPos.y, worldPos.z);
       scale(0.999);
-      fill(  map(activity, 0, 1,  30, 200), map(activity, 0, 1,  15, 100), 0);
-      stroke(map(activity, 0, 1, 128, 255), map(activity, 0, 1, 100, 200), 0);
+      fill(colFill);
+      stroke(colStroke);
       //strokeWeight(map(activity, 0, 1, 1, 2));
       renderShape();
     popMatrix();
@@ -141,4 +159,6 @@ class Cell
   
   
   private PVector[] vtx;
+  private float     activity;
+  private color     colFill, colStroke;
 }

@@ -48,6 +48,20 @@ class Frame
   }
   
   
+  Cell createCell(int x, int y, float activity)
+  {
+    Cell cell = getCell(x, y);
+    if ( cell == null )
+    {
+      float heightVariation = CELL_ROUGHNESS * noise(x / 10.0, y / 10.0);
+      cell = new Cell(new FramePos(this, x, y), heightVariation, cellRadius, cellDepth + heightVariation);
+      cell.setActivity(activity);
+      cells[y][x] = cell;
+    }
+    return cell;
+  }
+
+  
   void render()
   {
     for ( Cell[] row : cells )

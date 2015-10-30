@@ -29,6 +29,7 @@ final float COS60 = cos(radians(60));
 
 // global variables
 PImage pattern;
+PImage cellColourMap;
 Frame  frame;
 
 float posZ = 0;
@@ -84,7 +85,7 @@ void setup()
   if ( DEMO_MODE )
   {
     noCursor();
-    posZ = 600;
+    posZ = 570;
   }
 }
 
@@ -109,7 +110,7 @@ void draw()
     
 
   // are the agents "moving"?
-  if ( runAgents && (frameCount % 5 == 0) )
+  if ( runAgents && (frameCount % 1 == 0) )
   {
     canMove  = true;
     storePos = false;
@@ -160,7 +161,7 @@ void draw()
   if ( DEMO_MODE )
   {
     //automatic camera rotation
-    translate(width / 2, height * 10 / 21, posZ);
+    translate(width / 2, height * 10 / 22, posZ);
     rotateX(radians(45));
     rotateZ(radians((frameCount % 1000) * 360.0 / 1000.0));
   }
@@ -205,6 +206,11 @@ void restart()
   
   pattern.resize(frame.sizeX, frame.sizeY);
 
+  // colour map for cells
+  cellColourMap = loadImage("CellColourMap1.png");
+  //cellColourMap = loadImage("CellColourMap2.png");
+  cellColourMap.resize(256, 2);
+
   //generateCells(400);
     
   agents = new LinkedList<Agent>();
@@ -234,15 +240,13 @@ void generateCells(int count)
       // Generate cells more likely for bright pixels
       if ( b > random(1) )
       {
-        Cell c = frame.createCell(x, y);
-        c.activity = 0.75;
+        frame.createCell(x, y, 0.75);
       }
     }
     else
     {
        // Generate cells with different brightness
-      Cell c = frame.createCell(x, y);
-      c.activity = b;
+      frame.createCell(x, y, b);
     } 
   }  
 }
@@ -334,4 +338,5 @@ void keyPressed()
 void mouseWheel(MouseEvent event)
 {
   posZ -= event.getCount() * 10;
+  println("Z-Position: " + posZ);
 }
