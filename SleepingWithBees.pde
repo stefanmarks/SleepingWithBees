@@ -9,14 +9,6 @@
  * http://physicsworld.com/cws/article/news/2014/sep/10/fractal-like-honeycombs-take-the-strain
  */
 
-// some configuration variables
-final float   CELL_ROUGHNESS = 0; 
-
-final boolean DEMO_MODE         = true;
-final int     DEMO_RESET_TIME   = 60; // seconds
-final int     FRAMES_PER_SECOND = 60;
-
-
 // imports
 import java.util.*;
 import java.text.*;
@@ -110,7 +102,7 @@ void draw()
     
 
   // are the agents "moving"?
-  if ( runAgents && (frameCount % 1 == 0) )
+  if ( runAgents && (frameCount % FRAMES_PER_AGENT_MOVEMENT == 0) )
   {
     canMove  = true;
     storePos = false;
@@ -184,18 +176,6 @@ void draw()
 void restart()
 {
   // load image pattern
-  
-  // Typical beehive frame is 480mm x 240mm, 29mm deep
-  // numbers based on https://en.wikipedia.org/wiki/Langstroth_hive\
-  // should average ~7000 cells
-  // http://www.beesource.com/forums/archive/index.php/t-230451.html
-
-  final float FRAME_WIDTH   = 480;
-  final float FRAME_HEIGHT  = 240;
-  final float FRAME_DEPTH   = 28;  
-  final float CELL_DIAMETER = 6.235; // 5.4mm from flat side to flat side, -> diameter is 5.4mm / sin(60) = 6.235mm
-  final float CELL_SIZE     = CELL_DIAMETER * SIN60;
-  
   frame = new Frame((int) (FRAME_WIDTH / CELL_SIZE), 
                     (int) (FRAME_HEIGHT / (CELL_DIAMETER * 0.75)),
                     CELL_DIAMETER / 2, 
