@@ -29,17 +29,19 @@ class Cell
   }
   
   
-  void setActivity(float activity)
+  void setActivity(float act)
   {
-    this.activity = constrain(activity, 0, 1);
+    activity = constrain(act, 0, 1);
     colFill   = cellColourMap.get((int) (activity * 255), 0);
     colStroke = cellColourMap.get((int) (activity * 255), 1);
   }
+
 
   void addActivity(float add)
   {
     setActivity(activity + add);
   }
+  
 
   void updateGeometry()
   {
@@ -58,13 +60,14 @@ class Cell
     final float d1 = - depth + radius / 2; 
     final float d2 = - depth; 
     final float d3 = - depth - radius / 2;
+    final float dy = - depth * tan(radians(CELL_ANGLE)); // delta Y for slight angle in cells
     
-    vtx[ 0] = new PVector( x1,  y1, 0);
-    vtx[ 1] = new PVector( x2,  y2, 0); 
-    vtx[ 2] = new PVector( x2, -y2, 0);   
-    vtx[ 3] = new PVector( x1, -y1, 0);
-    vtx[ 4] = new PVector(-x2, -y2, 0);  
-    vtx[ 5] = new PVector(-x2,  y2, 0);
+    vtx[ 0] = new PVector( x1,  y1 + dy, 0);
+    vtx[ 1] = new PVector( x2,  y2 + dy, 0); 
+    vtx[ 2] = new PVector( x2, -y2 + dy, 0);   
+    vtx[ 3] = new PVector( x1, -y1 + dy, 0);
+    vtx[ 4] = new PVector(-x2, -y2 + dy, 0);  
+    vtx[ 5] = new PVector(-x2,  y2 + dy, 0);
     vtx[ 6] = new PVector( x1,  y1, d2);
     vtx[ 7] = new PVector( x2,  y2, d1);
     vtx[ 8] = new PVector( x2, -y2, d2);

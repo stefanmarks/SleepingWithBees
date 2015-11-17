@@ -3,8 +3,19 @@
  */
 public interface Agent
 {
+  /**
+   * Sense the world around the agent.
+   */
   public abstract void sense();
+  
+  /**
+   * Decide on what action to take.
+   */
   public abstract void decide();
+  
+  /**
+   * Act on the decision made.
+   */
   public abstract void act();
 }
 
@@ -18,7 +29,6 @@ public interface Agent
 int     commonAngle = 0;
 boolean canMove     = false;
 boolean storePos    = false;
-
 
 public class SyncDancer implements Agent
 {
@@ -48,7 +58,7 @@ public class SyncDancer implements Agent
       nextPosition = null;
       canMove      = false;
     }
-    else if ( nextPosition.hasCell() && (random(0, 100) > 50) )
+    else if ( nextPosition.hasCell() && (random(100) < 50) )
     {
       // reached an already filled cell > 50% chance of "walking" over it.
       nextPosition = null;
@@ -57,6 +67,9 @@ public class SyncDancer implements Agent
   }
   
   
+  /**
+   * Decide what to do next.
+   */
   public void decide()
   {
     if ( master )
@@ -70,7 +83,7 @@ public class SyncDancer implements Agent
         //commonAngle += (int) random(-20, 20);
       }
       
-      if ( random(10) < 1 )
+      if ( random(100) < 10 )
       {
         // 10% chance of remembering this position 
         storePos = true;

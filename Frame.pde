@@ -31,6 +31,9 @@ class Frame
 
   Cell getCell(int x, int y)
   {
+    if ( (x < 0) || (x >= sizeX) ||
+         (y < 0) || (y >= sizeY) ) return null;
+         
     return cells[y][x];  
   }
 
@@ -38,7 +41,9 @@ class Frame
   Cell createCell(int x, int y)
   {
     Cell cell = getCell(x, y);
-    if ( cell == null )
+    if ( (cell == null) && 
+         (x >= 0) && (x < sizeX) &&
+         (y >= 0) && (y < sizeY) )
     {
       float heightVariation = CELL_ROUGHNESS * noise(x / 10.0, y / 10.0);
       cell = new Cell(new FramePos(this, x, y), heightVariation, cellRadius, cellDepth + heightVariation);
@@ -53,10 +58,11 @@ class Frame
     Cell cell = getCell(x, y);
     if ( cell == null )
     {
-      float heightVariation = CELL_ROUGHNESS * noise(x / 10.0, y / 10.0);
-      cell = new Cell(new FramePos(this, x, y), heightVariation, cellRadius, cellDepth + heightVariation);
-      cell.setActivity(activity);
-      cells[y][x] = cell;
+      cell = createCell(x, y);
+      if ( cell != null ) 
+      {
+        cell.setActivity(activity);
+      }
     }
     return cell;
   }

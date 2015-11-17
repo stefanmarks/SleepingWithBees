@@ -25,6 +25,7 @@ PImage cellColourMap;
 Frame  frame;
 
 float posZ = 0;
+float posY = 0;
 
 // list of bees
 List<Agent> agents;
@@ -78,6 +79,8 @@ void setup()
   {
     noCursor();
     posZ = 570;
+    posY = -0.05;
+    CELL_ANGLE = 0; // no tilt for demo mode
   }
 }
 
@@ -153,7 +156,7 @@ void draw()
   if ( DEMO_MODE )
   {
     //automatic camera rotation
-    translate(width / 2, height * 10 / 22, posZ);
+    translate(width / 2, (1 + posY) * (height / 2), posZ);
     rotateX(radians(45));
     rotateZ(radians((frameCount % 1000) * 360.0 / 1000.0));
   }
@@ -306,6 +309,19 @@ void keyPressed()
     {
       // clear the frame and restart all agents
       restart(); 
+      break;
+    }
+    
+    case CODED :
+    {
+      // special keys
+      switch ( keyCode )
+      {
+        // cursor keys move centre of origin
+        case UP   : posY -= 0.01; break;
+        case DOWN : posY += 0.01; break;
+      }
+      
       break;
     }
   }
