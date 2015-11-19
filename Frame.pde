@@ -3,12 +3,20 @@
  */
 class Frame
 {
-  final int   sizeX, sizeY;
-  final float cellRadius, cellDepth;
+  final int     sizeX, sizeY;
+  final float   cellRadius, cellDepth;
 
-  final float height, width;
+  final float   height, width;
+  final boolean mirrored;
   
-  
+  /**
+   * Constructor for a frame.
+   *
+   * @param _sizeX       amount of cells horizontally
+   * @param _sizeY       amount of cells vertically
+   * @param _cellRadius  radius of each cell
+   * @param _cellDepth   depth of each cell
+   */
   Frame(int _sizeX, int _sizeY, float _cellRadius, float _cellDepth)
   {
     sizeX      = _sizeX;
@@ -20,8 +28,39 @@ class Frame
     height = sizeY * 1.5       * cellRadius; 
     
     cells = new Cell[sizeY][sizeX];
+    mirrored = true;
   }
   
+  
+  /**
+   * Constructor for a mirrored frame
+   */
+  Frame(Frame source)
+  {
+    sizeX      = source.sizeX;
+    sizeY      = source.sizeY;
+    cellRadius = source.cellRadius;
+    cellDepth  = source.cellDepth; 
+    
+    width  = sizeX * 2 * SIN60 * cellRadius;
+    height = sizeY * 1.5       * cellRadius; 
+
+    this.mirrored = !source.mirrored;
+    
+    cells = new Cell[sizeY][sizeX];
+    for ( int y = 0 ; y < sizeY ; y++ )
+    {
+      for ( int x = 0 ; x < sizeX ; x++ )
+      {
+        if ( source.hasCell(x, y) )
+        {
+          Cell cell = createCell(x, y);
+          cell.setActivity(source.getCell(x, y).getActivity());
+        }
+      }
+    }
+  }
+
   
   boolean hasCell(int x, int y)
   {

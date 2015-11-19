@@ -22,7 +22,7 @@ final float COS60 = cos(radians(60));
 // global variables
 PImage pattern;
 PImage cellColourMap;
-Frame  frame;
+Frame  frame, mirrorFrame;
 
 float posZ = 0;
 float posY = 0;
@@ -163,7 +163,7 @@ void draw()
   else
   {
     // mouse position determines rotation
-    translate(map(mouseX, 0,  width, width  * 1 / 4, width  * 3 / 4), 
+    translate(map(mouseX, 0,  width, width  * 2 / 4, width  * 2 / 4), 
               map(mouseY, 0, height, height * 1 / 4, height * 3 / 4),
               posZ);
     rotateX(map(mouseY, 0, height, 2, -2));
@@ -171,8 +171,17 @@ void draw()
   }
   
   // draw frame
-  translate(-frame.width/2, -frame.height/2);
-  frame.render();
+  pushMatrix();
+    translate(-frame.width/2, -frame.height/2);
+    frame.render();
+  popMatrix();
+  
+  // draw mirror frame
+  if ( mirrorFrame != null )
+  {
+    translate(-mirrorFrame.width/2, -mirrorFrame.height/2);
+    mirrorFrame.render();
+  } 
 }
 
 
@@ -183,6 +192,7 @@ void restart()
                     (int) (FRAME_HEIGHT / (CELL_DIAMETER * 0.75)),
                     CELL_DIAMETER / 2, 
                     FRAME_DEPTH / 2); // Cells horiz, Cells vert, Cell radius in units, Cell depth in units 
+  mirrorFrame = null;
   
   pattern = loadImage("CellPattern1.png"); // hexagon picture
   //pattern = loadImage("CellPattern2.jpg"); // bee
@@ -200,6 +210,23 @@ void restart()
   agents.add(new SyncDancer(new FramePos(frame, frame.sizeX/2, frame.sizeY/2),    0, true));
   agents.add(new SyncDancer(new FramePos(frame, frame.sizeX/2, frame.sizeY/2),  120, false));
   agents.add(new SyncDancer(new FramePos(frame, frame.sizeX/2, frame.sizeY/2), -120, false));
+}
+
+
+/**
+ * Mirrors the existing frame.
+ */
+void toggleMirrorFrame()
+{
+  if ( mirrorFrame == null )
+  {
+    mirrorFrame = new Frame(frame);
+  }
+  else
+  {
+    // mirror already exists > destroy
+    mirrorFrame = null;
+  }  
 }
 
 
@@ -246,6 +273,12 @@ void saveStlFile(String filename)
   if ( w != null )
   {
     frame.writeSTL(w);
+    
+    if ( mirrorFrame != null )
+    {
+      mirrorFrame.writeSTL(w);
+    }
+    
     w.close();
     println("STL file created");
   }  
@@ -312,6 +345,13 @@ void keyPressed()
       break;
     }
     
+    case 'm' : 
+    {
+      // mirror the frame
+      toggleMirrorFrame(); 
+      break;
+    }
+
     case CODED :
     {
       // special keys

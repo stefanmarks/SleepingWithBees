@@ -17,6 +17,7 @@ class Cell
     this.depth      = depth;
     
     vtx = null; 
+    arrFaceIdx = pos.frame.mirrored ? 1 : 0; // what face array to use
     updateGeometry();
 
     setActivity(0);
@@ -53,28 +54,38 @@ class Cell
       //     12: cap centre
     }
 
-    final float x1 =   0;
-    final float y1 =   radius;
-    final float x2 =   radius * SIN60;
-    final float y2 =   radius * COS60;
-    final float d1 = - depth + radius / 2; 
-    final float d2 = - depth; 
-    final float d3 = - depth - radius / 2;
-    final float dy = - depth * tan(radians(CELL_ANGLE)); // delta Y for slight angle in cells
+    final float x1 =  0;
+    final float y1 =  radius;
+    final float x2 =  radius * SIN60;
+    final float y2 =  radius * COS60;
+    final float dy = -depth * tan(radians(CELL_ANGLE)); // delta Y for slight angle in cells
+
+    float z0 = -depth;
+    float z1 =  0;
+    float z2 = -radius / 4; 
+    float z3 =  radius / 4;
     
-    vtx[ 0] = new PVector( x1,  y1 + dy, 0);
-    vtx[ 1] = new PVector( x2,  y2 + dy, 0); 
-    vtx[ 2] = new PVector( x2, -y2 + dy, 0);   
-    vtx[ 3] = new PVector( x1, -y1 + dy, 0);
-    vtx[ 4] = new PVector(-x2, -y2 + dy, 0);  
-    vtx[ 5] = new PVector(-x2,  y2 + dy, 0);
-    vtx[ 6] = new PVector( x1,  y1, d2);
-    vtx[ 7] = new PVector( x2,  y2, d1);
-    vtx[ 8] = new PVector( x2, -y2, d2);
-    vtx[ 9] = new PVector( x1, -y1, d1);  
-    vtx[10] = new PVector(-x2, -y2, d2);
-    vtx[11] = new PVector(-x2,  y2, d1);
-    vtx[12] = new PVector(  0,   0, d3);
+    if ( pos.frame.mirrored )
+    {
+      z0 = -z0;  float tmp_z1 = z1;
+      z1 = -z2;
+      z2 = -tmp_z1; 
+      z3 = -z3; 
+    }
+    
+    vtx[ 0] = new PVector( x1,  y1 + dy, z0);
+    vtx[ 1] = new PVector( x2,  y2 + dy, z0); 
+    vtx[ 2] = new PVector( x2, -y2 + dy, z0);   
+    vtx[ 3] = new PVector( x1, -y1 + dy, z0);
+    vtx[ 4] = new PVector(-x2, -y2 + dy, z0);  
+    vtx[ 5] = new PVector(-x2,  y2 + dy, z0);
+    vtx[ 6] = new PVector( x1,  y1, z2);
+    vtx[ 7] = new PVector( x2,  y2, z1);
+    vtx[ 8] = new PVector( x2, -y2, z2);
+    vtx[ 9] = new PVector( x1, -y1, z1);  
+    vtx[10] = new PVector(-x2, -y2, z2);
+    vtx[11] = new PVector(-x2,  y2, z1);
+    vtx[12] = new PVector(  0,   0, z3);
   }
 
 
@@ -94,47 +105,37 @@ class Cell
   void renderShape()
   {
     beginShape(QUADS);
-      renderQuad( 0,  6,  7,  1); 
-      renderQuad( 1,  7,  8,  2); 
-      renderQuad( 2,  8,  9,  3); 
-      renderQuad( 3,  9, 10,  4);
-      renderQuad( 4, 10, 11,  5); 
-      renderQuad( 5, 11,  6,  0); 
-      renderQuad( 8,  7,  6, 12);
-      renderQuad(10,  9,  8, 12);
-      renderQuad( 6, 11, 10, 12);
+      for ( int[] face : arrFaces[arrFaceIdx] )
+      {  
+        renderQuad(face); 
+      }
     endShape();
   }  
   
   
-  void renderQuad(int v1, int v2, int v3, int v4)
+  void renderQuad(int[] arrV)
   {
     PVector v;
-    v = vtx[v1]; vertex(v.x, v.y, v.z); 
-    v = vtx[v2]; vertex(v.x, v.y, v.z); 
-    v = vtx[v3]; vertex(v.x, v.y, v.z); 
-    v = vtx[v4]; vertex(v.x, v.y, v.z); 
+    v = vtx[arrV[0]]; vertex(v.x, v.y, v.z); 
+    v = vtx[arrV[1]]; vertex(v.x, v.y, v.z); 
+    v = vtx[arrV[2]]; vertex(v.x, v.y, v.z); 
+    v = vtx[arrV[3]]; vertex(v.x, v.y, v.z); 
   }
   
   
   void writeSTL(PrintWriter w)
   {
-    writeQuad(w,  0,  6,  7,  1); 
-    writeQuad(w,  1,  7,  8,  2); 
-    writeQuad(w,  2,  8,  9,  3); 
-    writeQuad(w,  3,  9, 10,  4);
-    writeQuad(w,  4, 10, 11,  5); 
-    writeQuad(w,  5, 11,  6,  0); 
-    writeQuad(w,  8,  7,  6, 12);
-    writeQuad(w, 10,  9,  8, 12);
-    writeQuad(w,  6, 11, 10, 12);
+    for ( int[] face : arrFaces[arrFaceIdx] )
+    {  
+      writeQuad(w, face); 
+    }
   }
   
   
-  void writeQuad(PrintWriter w, int v1, int v2, int v3, int v4)
+  void writeQuad(PrintWriter w, int[] arrV)
   {
-    writeTriangle(w, v1, v2, v3);
-    writeTriangle(w, v3, v4, v1);
+    writeTriangle(w, arrV[0], arrV[1], arrV[2]);
+    writeTriangle(w, arrV[2], arrV[3], arrV[0]);
   }
   
   
@@ -161,7 +162,35 @@ class Cell
   }
   
   
-  private PVector[] vtx;
-  private float     activity;
-  private color     colFill, colStroke;
+  private       PVector[] vtx;
+  private final int       arrFaceIdx;
+  private       float     activity;
+  private       color     colFill, colStroke;
 }
+
+
+static final int[][][] arrFaces = 
+  { // for "normal" cells
+    { { 0,  6,  7,  1},  
+      { 1,  7,  8,  2}, 
+      { 2,  8,  9,  3}, 
+      { 3,  9, 10,  4},
+      { 4, 10, 11,  5}, 
+      { 5, 11,  6,  0}, 
+      { 9,  8,  7, 12},
+      {11, 10,  9, 12},
+      { 7,  6, 11, 12},
+    },
+    { // for mirrored cells (cap quads need to be different to avoid non-planar surface) 
+      { 0,  6,  7,  1},  
+      { 1,  7,  8,  2}, 
+      { 2,  8,  9,  3}, 
+      { 3,  9, 10,  4},
+      { 4, 10, 11,  5}, 
+      { 5, 11,  6,  0},  
+      { 8,  7,  6, 12},
+      {10,  9,  8, 12},
+      { 6, 11, 10, 12},
+    }
+  };
+  

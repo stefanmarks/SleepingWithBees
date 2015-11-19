@@ -92,7 +92,7 @@ public class FramePos
       worldPos.x += 1; // odd row offset 
     }
     worldPos.x *= SIN60 * frame.cellRadius;
-    worldPos.y  = y * 0.75 * 2 * frame.cellRadius;
+    worldPos.y  = (y + (frame.mirrored ? 0.666666666666 : 0)) * 0.75 * 2 * frame.cellRadius;
     return worldPos;
   }
   
