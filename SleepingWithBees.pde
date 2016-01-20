@@ -195,6 +195,7 @@ void restart()
   mirrorFrame = null;
   
   pattern = loadImage("CellPattern1.png"); // hexagon picture
+  pattern = loadImage("Triangle.png");
   //pattern = loadImage("CellPattern2.jpg"); // bee
   
   pattern.resize(frame.sizeX, frame.sizeY);
