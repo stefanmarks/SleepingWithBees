@@ -18,8 +18,8 @@ public class FramePos
   
   public boolean isValid()
   {
-    return (x >= 0) && (x < frame.sizeX) && 
-           (y >= 0) && (y < frame.sizeY); 
+    return (x >= 0) && (x < frame.config.columns) && 
+           (y >= 0) && (y < frame.config.rows); 
   }
   
   
@@ -91,8 +91,8 @@ public class FramePos
     {
       worldPos.x += 1; // odd row offset 
     }
-    worldPos.x *= SIN60 * frame.cellRadius;
-    worldPos.y  = (y + (frame.mirrored ? 0.666666666666 : 0)) * 0.75 * 2 * frame.cellRadius;
+    worldPos.x *= SIN60 * frame.config.cellRadius;
+    worldPos.y  = (y + (frame.config.mirrored ? 0.666666666666 : 0)) * 0.75 * 2 * frame.config.cellRadius;
     return worldPos;
   }
   

@@ -80,7 +80,6 @@ void setup()
     noCursor();
     posZ = 570;
     posY = -0.05;
-    CELL_ANGLE = 0; // no tilt for demo mode
   }
 }
 
@@ -172,14 +171,14 @@ void draw()
   
   // draw frame
   pushMatrix();
-    translate(-frame.width/2, -frame.height/2);
+    translate(-frame.getWidth() / 2, -frame.getHeight() / 2);
     frame.render();
   popMatrix();
   
   // draw mirror frame
   if ( mirrorFrame != null )
   {
-    translate(-mirrorFrame.width/2, -mirrorFrame.height/2);
+    translate(-mirrorFrame.getWidth() / 2, -mirrorFrame.getHeight() / 2);
     mirrorFrame.render();
   } 
 }
@@ -187,18 +186,23 @@ void draw()
 
 void restart()
 {
-  // load image pattern
-  frame = new Frame((int) (FRAME_WIDTH / CELL_SIZE), 
-                    (int) (FRAME_HEIGHT / (CELL_DIAMETER * 0.75)),
-                    CELL_DIAMETER / 2, 
-                    FRAME_DEPTH / 2); // Cells horiz, Cells vert, Cell radius in units, Cell depth in units 
+  FrameConfiguration conf = new FrameConfiguration(FRAME_WIDTH, FRAME_HEIGHT, CELL_DIAMETER, FRAME_DEPTH / 2);
+  conf.mirrored = true;
+  conf.cellRoughness = CELL_ROUGHNESS;
+  if ( !DEMO_MODE ) 
+  {
+    conf.cellAngle = CELL_ANGLE; // no tilt for demo mode
+  }
+
+  frame = new Frame(conf); 
   mirrorFrame = null;
   
+  // load image pattern
   pattern = loadImage("CellPattern1.png"); // hexagon picture
   pattern = loadImage("Triangle.png");
   //pattern = loadImage("CellPattern2.jpg"); // bee
   
-  pattern.resize(frame.sizeX, frame.sizeY);
+  pattern.resize(frame.config.columns, frame.config.rows);
 
   // colour map for cells
   cellColourMap = loadImage("CellColourMap1.png");
@@ -208,9 +212,11 @@ void restart()
   //generateCells(400);
     
   agents = new LinkedList<Agent>();
-  agents.add(new SyncDancer(new FramePos(frame, frame.sizeX/2, frame.sizeY/2),    0, true));
-  agents.add(new SyncDancer(new FramePos(frame, frame.sizeX/2, frame.sizeY/2),  120, false));
-  agents.add(new SyncDancer(new FramePos(frame, frame.sizeX/2, frame.sizeY/2), -120, false));
+  int centreX = frame.config.columns / 2;
+  int centreY = frame.config.rows    / 2;
+  agents.add(new SyncDancer(new FramePos(frame, centreX, centreY),    0, true));
+  agents.add(new SyncDancer(new FramePos(frame, centreX, centreY),  120, false));
+  agents.add(new SyncDancer(new FramePos(frame, centreX, centreY), -120, false));
 }
 
 
@@ -240,8 +246,8 @@ void generateCells(int count)
 {
   for ( int i = 0 ; i < count ; i++ )
   {
-    int x = (int) random(0, frame.sizeX);
-    int y = (int) random(0, frame.sizeY);
+    int x = (int) random(0, frame.config.columns);
+    int y = (int) random(0, frame.config.rows);
     
     float b = brightness(pattern.get(x, y)) / 255.0;
     
@@ -264,7 +270,21 @@ void generateCells(int count)
 
 
 /**
- * Saves th gemoetry as an STL file.
+ * Saves the frame config as a JSON file.
+ *
+ * @param filename  the filename to save
+ */
+void saveJSON_File(String filename)
+{  
+  if ( saveJSONObject(frame.getJSON(), filename, "compact") )
+  {
+    println("JSON file '" + filename + "' created");
+  }
+}
+
+
+/**
+ * Saves the geometry as an STL file.
  *
  * @param filename  the filename to save
  */
@@ -281,7 +301,7 @@ void saveStlFile(String filename)
     }
     
     w.close();
-    println("STL file created");
+    println("STL file '" + filename + "' created");
   }  
 }
 
@@ -318,6 +338,13 @@ void keyPressed()
       break;    
     }
 
+    case 'j' : 
+    {
+      // save frame config as JSON file
+      saveJSON_File("frame" + getTimestamp() + ".frm"); 
+      break;
+    }
+    
     case 's' : 
     {
       // save screenshot
@@ -375,5 +402,4 @@ void keyPressed()
 void mouseWheel(MouseEvent event)
 {
   posZ -= event.getCount() * 10;
-  println("Z-Position: " + posZ);
 }

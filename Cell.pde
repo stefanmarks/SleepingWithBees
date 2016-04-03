@@ -17,7 +17,7 @@ class Cell
     this.depth      = depth;
     
     vtx = null; 
-    arrFaceIdx = pos.frame.mirrored ? 1 : 0; // what face array to use
+    arrFaceIdx = pos.frame.config.mirrored ? 1 : 0; // what face array to use
     updateGeometry();
 
     setActivity(0);
@@ -65,7 +65,7 @@ class Cell
     float z2 = -radius / 4; 
     float z3 =  radius / 4;
     
-    if ( pos.frame.mirrored )
+    if ( pos.frame.config.mirrored )
     {
       z0 = -z0;  float tmp_z1 = z1;
       z1 = -z2;

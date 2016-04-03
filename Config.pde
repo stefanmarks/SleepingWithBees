@@ -7,8 +7,7 @@ final float FRAME_WIDTH   = 480;
 final float FRAME_HEIGHT  = 230; // our specific case
 final float FRAME_DEPTH   = 19;  
 final float CELL_DIAMETER = 6.235; // 5.4mm from flat side to flat side, -> diameter is 5.4mm / sin(60) = 6.235mm
-final float CELL_SIZE     = CELL_DIAMETER * SIN60;
-      float CELL_ANGLE    = 6;    // cell angle in degrees (set to 0 when in demo mode, therefore no 'final' attribute)
+final float CELL_ANGLE    = 6;    // cell angle in degrees (set to 0 when in demo mode, therefore no 'final' attribute)
 
 // some configuration variables
 final float   CELL_ROUGHNESS = 0; // values between 0 (no irregularities) to maybe 10 (extreme)
