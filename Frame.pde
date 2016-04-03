@@ -31,17 +31,16 @@ class Frame
     JSONArray arrCells = o.getJSONArray("cells");
     for ( int rowIdx = 0 ; rowIdx < config.rows ; rowIdx++ )
     {
-      JSONArray arrRow = arrCells.getJSONArray(rowIdx);
+      String strRow = arrCells.getString(rowIdx);
       for ( int columnIdx = 0 ; columnIdx < config.columns ; columnIdx++ )
       {
-        int activity = arrRow.getInt(columnIdx, 0);
-        if ( activity > 0 )
+        char activity = strRow.charAt(columnIdx);
+        if ( activity > ' ' )
         {
-          // number > 0: cell exists with activity mapped to [1..9]
-          createCell(columnIdx, rowIdx, map(activity, 1, 9, 0, 1));
+          // number > 0: cell exists with activity mapped to [0..9]
+          createCell(columnIdx, rowIdx, map(activity - '0', 0, 9, 0, 1));
         }
       }
-      arrCells.setJSONArray(rowIdx, arrRow);
     }
   }
   
@@ -201,19 +200,19 @@ class Frame
     JSONArray arrCells = new JSONArray();
     for ( int rowIdx = 0 ; rowIdx < config.rows ; rowIdx++ )
     {
-      JSONArray arrRow = new JSONArray();
+      StringBuilder strRow = new StringBuilder();
       for ( int columnIdx = 0 ; columnIdx < config.columns ; columnIdx++ )
       {
         Cell c = cells[rowIdx][columnIdx];
         // store activity as number between 1 and 9, and a missing cell as a 0
-        int activity = 0;
+        char activity = ' ';
         if ( c != null )
         {
-          activity = (int) constrain(map(c.activity, 0, 1, 1, 9), 1, 9);
+          activity = (char) ('0' + map(c.activity, 0, 1, 0, 9));
         }
-        arrRow.append(activity);
+        strRow.append(activity);
       }
-      arrCells.setJSONArray(rowIdx, arrRow);
+      arrCells.append(strRow.toString());
     }
     o.setJSONArray("cells", arrCells);
     
