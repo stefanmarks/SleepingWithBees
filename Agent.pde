@@ -32,6 +32,13 @@ boolean storePos    = false;
 
 public class SyncDancer implements Agent
 {
+  /**
+   * Creates a new "synchronous dancing" agent.
+   *
+   * @param start       start position in frame
+   * @param angleOffset direction offset to apply fro symmetry
+   * @param master      <code>true</code> for the master "dancer"
+   */
   public SyncDancer(FramePos start, int angleOffset, boolean master)
   {
     this.position    = start;
@@ -43,6 +50,17 @@ public class SyncDancer implements Agent
     prevNoise = 0;
 
     start.createCell();
+  }
+  
+  
+  /**
+   * Sets the perceived wing noise
+   *
+   * @param noise  noise level
+   */
+  public void setWingNoise(float noise)
+  {
+    wingNoise = noise;
   }
   
   
@@ -76,7 +94,7 @@ public class SyncDancer implements Agent
     {
       if ( canMove )
       {
-        // change directiopn based on wing noise change
+        // change direction based on wing noise change
         commonAngle += 400 * (wingNoise - prevNoise);
         prevNoise = wingNoise;
         
@@ -131,7 +149,7 @@ public class SyncDancer implements Agent
   FramePos position, nextPosition;
   int      angleOffset;
   
-  float    prevNoise;
+  float    wingNoise, prevNoise;
   
   Deque<FramePosDir> memory;
 }

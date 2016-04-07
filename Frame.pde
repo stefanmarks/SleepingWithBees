@@ -27,6 +27,7 @@ class Frame
   {
     // read configuration
     this(new FrameConfiguration(o.getJSONObject("config")));
+    config.mirrored = true;
     // read cell data
     JSONArray arrCells = o.getJSONArray("cells");
     for ( int rowIdx = 0 ; rowIdx < config.rows ; rowIdx++ )
@@ -146,6 +147,22 @@ class Frame
       }
     }
     return cell;
+  }
+  
+  
+  /**
+   * Removes a cell at a given position.
+   *
+   * @param x  the X position
+   * @param y  the Y position
+   */
+  void removeCell(int x, int y)
+  {
+    if ( (x >= 0) && (x < config.columns) &&
+         (y >= 0) && (y < config.rows) )
+    {
+      cells[y][x] = null;
+    }
   }
   
   

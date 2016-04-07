@@ -33,8 +33,8 @@ class Cell
   void setActivity(float act)
   {
     activity = constrain(act, 0, 1);
-    colFill   = cellColourMap.get((int) (activity * 255), 0);
-    colStroke = cellColourMap.get((int) (activity * 255), 1);
+    colFill   = getCellColour(activity, false);
+    colStroke = getCellColour(activity, true);
   }
 
 

@@ -9,35 +9,52 @@
  * http://physicsworld.com/cws/article/news/2014/sep/10/fractal-like-honeycombs-take-the-strain
  */
 
+// program name and version
+final String PROGRAM_TITLE   = "Sleeping With Bees";
+final String PROGRAM_VERSION = "2.0";
+
 // imports
 import java.util.*;
 import java.text.*;
+import javax.swing.*;
+import javax.swing.filechooser.*;
 import ddf.minim.analysis.*;
 import ddf.minim.*;
+import controlP5.*;
 
 // Maths constants
 final float SIN60 = sin(radians(60));
 final float COS60 = cos(radians(60));
 
+// GUI constants
+final int GUI_VSPACE = 10; // default vertical GUI element spacing
+final int GUI_VSIZE  = 15; // default vertical GUI element size
+
 // global variables
-PImage pattern;
-PImage cellColourMap;
-Frame  frame, mirrorFrame;
+ControlP5 gui;                       // GUI
+boolean   hideGUI;                   // flag for hiding the gui
+int       leftGUI_Y,rightGUI_Y;      // Y positions of GUI elements (trivial layout manegement)
+Button    btnSaveSTL, btnSaveJSON;   // common buttons for saving files
+Toggle    btnMirror;                 // mirror button
+Button    btnMenu;                   // return to menu
 
-float posZ = 0;
-float posY = 0;
+Minim     minim;                     // Sound system
+Frame     primaryFrame, mirrorFrame; // Frames of cells and the mirrored frame
+PImage    cellColourMap;             // colour scheme
+PVector   cameraPos, frameRotation;  // camera position and frame rotation
 
-// list of bees
-List<Agent> agents;
-boolean     runAgents;
 
-// sound related variables
-Minim       minim;
-AudioPlayer sound;
-FFT         fft;
-boolean     drawSpectrum = false;
-float       wingNoise, wingNoiseMax;
-float       hiveNoise, hiveNoiseMax;
+
+// Program modes
+enum ProgramMode
+{
+  INTRO, DEMO, GENERATE, LOAD_IMAGE, LOAD_FRAME;
+}
+
+ProgramMode  currentMode, newMode;
+IProgramMode programMode;
+
+java.awt.Component mainComponent;
 
 
 void settings()
@@ -59,121 +76,183 @@ void setup()
   strokeWeight(1);
   frameRate(FRAMES_PER_SECOND);
 
-  // load sound
   minim = new Minim(this);
-  sound = minim.loadFile("Hive1.mp3");
-  //sound.play();    // play once
-  sound.loop(); // for continuous play
+  gui   = new ControlP5(this);
   
-  // attach FFT analyser
-  fft = new FFT(sound.bufferSize(), sound.sampleRate());
+  cameraPos     = new PVector();
+  frameRotation = new PVector();
+  hideGUI       = false;
   
   // start
-  restart(); 
-  
-  wingNoiseMax = 0.01;
-  hiveNoiseMax = 0.01;
+  setColourScheme();
+  programMode = null;
+  switchProgramMode(ProgramMode.INTRO);
+}
 
-  runAgents = DEMO_MODE;
-  if ( DEMO_MODE )
+
+void switchProgramMode(ProgramMode mode)
+{
+  newMode = mode;
+}
+
+
+/**
+ * Rendersa single frame.
+ */
+void draw()
+{
+  // has program mode changed?
+  if ( newMode != currentMode )
   {
-    noCursor();
-    posZ = 570;
-    posY = -0.05;
+    // if yes, deactivate old mode
+    if ( programMode != null )
+    {
+      programMode.deinitialise();
+      programMode = null;
+    }
+    
+    // remove all GUI elements
+    List<ControllerInterface<?>> list = gui.getAll();
+    for ( ControllerInterface ci : list )
+    {
+      gui.remove(ci.getName());
+    }
+    setGUI_Visibility(true);
+  
+    // delete frames
+    primaryFrame = null;
+    mirrorFrame  = null;
+    
+    // reset some settings
+    cursor();
+    cameraPos.z = 500;
+    leftGUI_Y  = 10;
+    rightGUI_Y = 10;
+    
+    // switch to new program mode
+    switch ( newMode )
+    {
+      case DEMO       : programMode = new ProgramMode_Generate(true); break;
+      case GENERATE   : programMode = new ProgramMode_Generate(false); break;
+      case LOAD_IMAGE : programMode = new ProgramMode_LoadImage(); break;
+      case LOAD_FRAME : programMode = new ProgramMode_LoadFrame(); break;
+      default         : programMode = new ProgramMode_Intro(); break;
+    }
+    
+    if ( programMode != null )
+    {
+      programMode.initialise();
+      // println("Switched to program mode '" + programMode.getName() + "'");
+    }
+    
+    currentMode = newMode;
+
+    
+    // add common GUI elements
+    if ( currentMode != ProgramMode.INTRO )
+    {
+      rightGUI_Y += GUI_VSPACE;
+  
+      btnMirror = gui.addToggle("Mirror")
+        .setSize(100, GUI_VSIZE)
+      ;
+      btnMirror.getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER);
+      addControlR(btnMirror);
+  
+      rightGUI_Y += GUI_VSPACE;
+      btnSaveSTL = gui.addButton("Save STL")
+        .setSize(100, GUI_VSIZE)
+      ;
+      btnSaveSTL.getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER);
+      addControlR(btnSaveSTL);
+      
+      btnSaveJSON = gui.addButton("Save JSON")
+        .setSize(100, GUI_VSIZE)
+      ;
+      btnSaveJSON.getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER);
+      addControlR(btnSaveJSON);
+
+      rightGUI_Y += GUI_VSPACE;
+  
+      btnMenu = gui.addButton("Back to Menu")
+        .setSize(100, GUI_VSIZE)
+      ;
+      btnMenu.getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER);
+      addControlR(btnMenu);  
+    }
+    
+    gui.addFrameRate().setInterval(10).setPosition(width - 30, height - 20);
+  }
+  
+  
+  hint(ENABLE_DEPTH_TEST);   
+
+  pushMatrix();
+  pushStyle();
+  
+  if ( programMode != null )
+  {
+    programMode.draw();
+  }
+
+  popStyle();
+  popMatrix();
+
+  // don't hide GUI with 3D content
+  hint(DISABLE_DEPTH_TEST);   
+}
+
+
+void addControlL(ControllerInterface ci)
+{
+ ci.setPosition(10, leftGUI_Y);
+ leftGUI_Y += ci.getHeight() + GUI_VSPACE; 
+}
+
+
+void addControlR(ControllerInterface ci)
+{
+ ci.setPosition(width - 10 - ci.getWidth(), rightGUI_Y);
+ rightGUI_Y += ci.getHeight() + GUI_VSPACE; 
+}
+
+
+void controlEvent(CallbackEvent theEvent)
+{
+  if (theEvent.getAction() == ControlP5.ACTION_PRESS )
+  {
+    controlP5.Controller src = theEvent.getController();
+    if      ( src == btnSaveSTL  ) { saveStlFile(); }
+    else if ( src == btnSaveJSON ) { saveJSON_File(); }
+    else if ( src == btnMirror   ) { enableMirrorFrame(btnMirror.getBooleanValue()); }
+    else if ( src == btnMenu     ) { switchProgramMode(ProgramMode.INTRO); }
   }
 }
 
 
-
-void draw()
+void applyStandardFrameTransformation()
 {
-  // analyse the sound
-  fft.forward(sound.mix);
-  
-  // wing noise = average of 150-700 Hz bands
-  float newWingNoise = fft.calcAvg(150, 700);           // (center bee-wing frequency ~200Hz) 
-  wingNoiseMax       = max(wingNoiseMax, newWingNoise); // running maximum
-  newWingNoise      /= wingNoiseMax;                    // normalise [0...1]
-  wingNoise = lerp(wingNoise, newWingNoise, 0.1);       // avoid sharp value changes
-  
-  // hive noise = average of 5kHz-12kHz bands
-  float newHiveNoise = fft.calcAvg(5000, 12000);
-  hiveNoiseMax       = max(hiveNoiseMax, newHiveNoise); // running maximum
-  newHiveNoise      /= hiveNoiseMax;                    // normalise [0...1]
-  hiveNoise = lerp(hiveNoise, newHiveNoise, 0.1);       // avoid sharp value changes 
-    
+  // mouse position determines rotation
+  translate(map(frameRotation.y, -90, 90, width  * 3 / 8, width  * 5 / 8), 
+            map(frameRotation.x, -90, 90, height * 5 / 8, height * 3 / 8),
+            cameraPos.z);
+  rotateX(radians(frameRotation.x));
+  rotateY(radians(frameRotation.y));
+}
 
-  // are the agents "moving"?
-  if ( runAgents && (frameCount % FRAMES_PER_AGENT_MOVEMENT == 0) )
-  {
-    canMove  = true;
-    storePos = false;
-    
-    for ( Agent a : agents ) 
-    {
-      a.sense();
-    }
-    for ( Agent a : agents ) 
-    {
-      a.decide();
-    }
-    for ( Agent a : agents ) 
-    {
-      a.act();
-    }
-  }
-  
-  if ( DEMO_MODE )
-  {
-    // reset hive after certain time
-    if ( frameCount % (FRAMES_PER_SECOND * DEMO_RESET_TIME) == 0 )
-    {
-      restart();
-    }
-  }
 
-  // clear screen
-  background(0);
-
-  if ( drawSpectrum )
+/**
+ * Draws the frame and mirror frame.
+ */
+void drawFrames()
+{
+  if ( primaryFrame != null )
   {
-    // draw spectrum
-    noStroke();
-    final int barWidth = width / fft.specSize(); 
-    for(int i = 0; i < fft.specSize() ; i++)
-    {
-      if ( i == mouseX / barWidth ) { fill(255, 0, 0); println(fft.indexToFreq(i) + "Hz"); }
-      else                          { fill(255); }
-      float intensity = fft.getBand(i) * height / 5;
-      rect(i * barWidth, height - intensity, barWidth, intensity);
-    }
-    
-    fill(0, 255,   0); rect(0,  0, width * wingNoise, 10);
-    fill(0,   0, 255); rect(0, 10, width * hiveNoise, 10); 
+    pushMatrix();
+      translate(-primaryFrame.getWidth() / 2, -primaryFrame.getHeight() / 2);
+      primaryFrame.render();
+    popMatrix();
   }
-    
-  if ( DEMO_MODE )
-  {
-    //automatic camera rotation
-    translate(width / 2, (1 + posY) * (height / 2), posZ);
-    rotateX(radians(45));
-    rotateZ(radians((frameCount % 1000) * 360.0 / 1000.0));
-  }
-  else
-  {
-    // mouse position determines rotation
-    translate(map(mouseX, 0,  width, width  * 2 / 4, width  * 2 / 4), 
-              map(mouseY, 0, height, height * 1 / 4, height * 3 / 4),
-              posZ);
-    rotateX(map(mouseY, 0, height, 2, -2));
-    rotateY(map(mouseX, 0, width, -2, 2));
-  }
-  
-  // draw frame
-  pushMatrix();
-    translate(-frame.getWidth() / 2, -frame.getHeight() / 2);
-    frame.render();
-  popMatrix();
   
   // draw mirror frame
   if ( mirrorFrame != null )
@@ -184,99 +263,75 @@ void draw()
 }
 
 
-void restart()
+/**
+ * Mirrors the existing frame.
+ *
+ * @param enable  <code>true</code> to enable the mirror
+ */
+void enableMirrorFrame(boolean enable)
 {
-  FrameConfiguration conf = new FrameConfiguration(FRAME_WIDTH, FRAME_HEIGHT, CELL_DIAMETER, FRAME_DEPTH / 2);
-  conf.mirrored = true;
-  conf.cellRoughness = CELL_ROUGHNESS;
-  if ( !DEMO_MODE ) 
+  if ( enable && (mirrorFrame == null) )
   {
-    conf.cellAngle = CELL_ANGLE; // no tilt for demo mode
+    mirrorFrame = new Frame(primaryFrame);
   }
-
-  frame = new Frame(conf); 
-  mirrorFrame = null;
+  else if ( !enable )
+  {
+    // destroy mirror frame
+    mirrorFrame = null;
+  }  
   
-  // load image pattern
-  pattern = loadImage("CellPattern1.png"); // hexagon picture
-  pattern = loadImage("Triangle.png");
-  //pattern = loadImage("CellPattern2.jpg"); // bee
-  
-  pattern.resize(frame.config.columns, frame.config.rows);
+  if ( btnMirror.getBooleanValue() != enable )
+  {
+    btnMirror.setValue(enable);
+  }
+}
 
+
+void setGUI_Visibility(boolean visible)
+{
+  if ( visible ) gui.show();
+  else           gui.hide();
+  hideGUI = !visible;
+}
+
+
+/**
+ * Determines the colour scheme of the cells.
+ */ 
+void setColourScheme()
+{
   // colour map for cells
   cellColourMap = loadImage("CellColourMap1.png");
   //cellColourMap = loadImage("CellColourMap2.png");
   cellColourMap.resize(256, 2);
-
-  //generateCells(400);
-    
-  agents = new LinkedList<Agent>();
-  int centreX = frame.config.columns / 2;
-  int centreY = frame.config.rows    / 2;
-  agents.add(new SyncDancer(new FramePos(frame, centreX, centreY),    0, true));
-  agents.add(new SyncDancer(new FramePos(frame, centreX, centreY),  120, false));
-  agents.add(new SyncDancer(new FramePos(frame, centreX, centreY), -120, false));
-}
+  
+  // set colour scheme for buttons as well
+  gui.setColorBackground(  getCellColour(0.75, false));
+  gui.setColorForeground(  getCellColour(1.00, false));
+  gui.setColorActive(      getCellColour(0.5, true));
+  gui.setColorCaptionLabel(getCellColour(1, true));
+  gui.setColorValueLabel(  getCellColour(1, true));
+}  
 
 
-/**
- * Mirrors the existing frame.
- */
-void toggleMirrorFrame()
+color getCellColour(float activity, boolean primaryColour)
 {
-  if ( mirrorFrame == null )
-  {
-    mirrorFrame = new Frame(frame);
-  }
-  else
-  {
-    // mirror already exists > destroy
-    mirrorFrame = null;
-  }  
-}
-
-
-/**
- * Generates random cells with intensity based on the background image.
- *
- * @param count  the number of cells to generate
- */
-void generateCells(int count)
-{
-  for ( int i = 0 ; i < count ; i++ )
-  {
-    int x = (int) random(0, frame.config.columns);
-    int y = (int) random(0, frame.config.rows);
-    
-    float b = brightness(pattern.get(x, y)) / 255.0;
-    
-    final boolean probabilityBased = true;
-    if ( probabilityBased )
-    {
-      // Generate cells more likely for bright pixels
-      if ( b > random(1) )
-      {
-        frame.createCell(x, y, 0.75);
-      }
-    }
-    else
-    {
-       // Generate cells with different brightness
-      frame.createCell(x, y, b);
-    } 
-  }  
+  activity = constrain(activity, 0, 1);
+  int x = (int) map(activity, 0, 1, 0, 255); // map activity to pixel
+  int y = primaryColour ? 1 : 0; // lower row is brighter = primary colour
+  return cellColourMap.get(x, y);
 }
 
 
 /**
  * Saves the frame config as a JSON file.
- *
- * @param filename  the filename to save
  */
-void saveJSON_File(String filename)
+void saveJSON_File()
 {  
-  if ( saveJSONObject(frame.getJSON(), filename, "compact") )
+  if ( primaryFrame == null ) return;
+
+  String filename = "./data/frame" + getTimestamp() + ".frm";
+  if ( saveJSONObject(primaryFrame.getJSON(), filename /*, "compact"*/) )
   {
     println("JSON file '" + filename + "' created");
   }
@@ -285,15 +340,16 @@ void saveJSON_File(String filename)
 
 /**
  * Saves the geometry as an STL file.
- *
- * @param filename  the filename to save
  */
-void saveStlFile(String filename)
-{  
+void saveStlFile()
+{ 
+  if ( primaryFrame == null ) return;
+  
+  String filename = "./data/geometry" + getTimestamp() + ".stl";
   PrintWriter w = createWriter(filename);
   if ( w != null )
   {
-    frame.writeSTL(w);
+    primaryFrame.writeSTL(w);
     
     if ( mirrorFrame != null )
     {
@@ -322,76 +378,85 @@ String getTimestamp()
  */
 void keyPressed()
 {
-  switch ( key )
+  if ( (programMode == null) || !programMode.handleKeyPressed() )
   {
-    case ' ' : 
+    switch ( key )
     {
-      // pause and unpause agent activity
-      runAgents = !runAgents; 
-      break;    
-    }
-    
-    case 'f' : 
-    {
-      // show/hide spectrum
-      drawSpectrum = !drawSpectrum;            
-      break;    
-    }
-
-    case 'j' : 
-    {
-      // save frame config as JSON file
-      saveJSON_File("frame" + getTimestamp() + ".frm"); 
-      break;
-    }
-    
-    case 's' : 
-    {
-      // save screenshot
-      saveFrame("screenshot" + getTimestamp() + ".png"); 
-      break;
-    }
-    
-    case 'p' : 
-    {
-      // save geometry as 3D-printable STL file
-      saveStlFile("geometry" + getTimestamp() + ".stl"); 
-      break;
-    }
-    
-    case 'g' : 
-    {
-      // generate some random cells based on the background image 
-      generateCells(100); 
-      break;
-    }
-    
-    case 'r' : 
-    {
-      // clear the frame and restart all agents
-      restart(); 
-      break;
-    }
-    
-    case 'm' : 
-    {
-      // mirror the frame
-      toggleMirrorFrame(); 
-      break;
-    }
-
-    case CODED :
-    {
-      // special keys
-      switch ( keyCode )
+      case 'g' : // Hide/Show GUI
       {
-        // cursor keys move centre of origin
-        case UP   : posY -= 0.01; break;
-        case DOWN : posY += 0.01; break;
+        if ( currentMode != ProgramMode.INTRO )
+        {
+          setGUI_Visibility(hideGUI);
+        }
+        break;
       }
       
-      break;
+      case 'j' : 
+      {
+        // save frame config as JSON file
+        saveJSON_File(); 
+        break;
+      }
+      
+      case 's' : 
+      {
+        // save screenshot
+        saveFrame("./data/screenshot" + getTimestamp() + ".png"); 
+        break;
+      }
+      
+      case 'p' : 
+      {
+        // save geometry as 3D-printable STL file
+        saveStlFile(); 
+        break;
+      }
+      
+      case 'm' : 
+      {
+        // mirror the frame
+        enableMirrorFrame(!btnMirror.getBooleanValue());
+        break;
+      }
+  
+      case ESC : 
+      {
+        // return to Intro mode, otherwise quit
+        if ( currentMode != ProgramMode.INTRO )
+        {
+          switchProgramMode(ProgramMode.INTRO); 
+          key = 0;
+        }
+        break;
+      }
+  
+      case CODED :
+      {
+        // special keys
+        switch ( keyCode )
+        {
+          // cursor keys move centre of origin
+          case UP   : cameraPos.y -= 0.01; break;
+          case DOWN : cameraPos.y += 0.01; break;
+        }
+        
+        break;
+      }
     }
+  }
+}
+
+
+/**
+ * Mouse drag for rotating the frame.
+ */
+void mouseDragged(MouseEvent event)
+{
+  if ( !gui.isMouseOver() ) 
+  {
+    // only move frame when mouse is not over GUI element
+    frameRotation.x = constrain(frameRotation.x + (pmouseY - mouseY) * 180.0 / height, -90, 90);
+    frameRotation.y = constrain(frameRotation.y - (pmouseX - mouseX) * 180.0 / width,  -90, 90);
   }
 }
 
@@ -401,5 +466,9 @@ void keyPressed()
  */
 void mouseWheel(MouseEvent event)
 {
-  posZ -= event.getCount() * 10;
+  if ( !gui.isMouseOver() ) 
+  {
+    // only move camera when mouse is not over GUI element
+    cameraPos.z -= event.getCount() * 10;
+  }
 }
